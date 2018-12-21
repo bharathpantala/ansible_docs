@@ -1,0 +1,14 @@
+---
+- hosts: all
+  gather_facts: false
+  sudo: no
+  tasks:
+  - name: Ensure tags are present on a resource
+    ec2_tag:
+      region: eu-west-1
+      resource: vol-XXXXXX
+      state: present
+      tags:
+        Name: ubervol
+        env: prod
+

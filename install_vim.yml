@@ -1,0 +1,13 @@
+---
+- hosts: back-end-servers
+  tasks:
+    - name: Installs nginx web server
+      become: true
+      apt: pkg=apache2 state=installed update_cache=true
+      notify:
+        - start apache2
+
+  handlers:
+    - name: start apache2
+      become: true
+      service: name=apache2 state=started

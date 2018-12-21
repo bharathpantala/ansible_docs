@@ -1,0 +1,160 @@
+ansible all --inventory-file=inventory.ini --module-name ping -u root
+
+-vvvv
+
+There is a large catalog of modules available for Ansible out of the box. Here are just a very small sample of some things that can be managed with Ansible modules:
+
+users
+groups
+packages
+ACLs
+files
+apache modules
+firewall rules
+ruby gems
+git repositories
+mysql and postgresql databases
+docker images
+AWS / Rackspace / Digital Ocean instances
+Campfire or Slack notifications
+and a whole lot more.
+
+
+Running adhoc commands
+
+ansible all -m ping
+
+ansible all -i inventory.ini -m command -u root --args "uptime"
+
+shortened commands
+ansible all -i inventory.ini -u root -a "uptime"
+
+ansible all -i inventory.ini -m apt -u root -a "name=zsh state=installed"
+
+shell module:
+ansible -i uhosts.ini all  -s -m shell -a 'apt-get install nginx'
+ansible -i uhosts.ini all  -s -m shell -a 'apt-get install nginx -y'
+
+ansible -i uhosts.ini all -u root -s -m shell -a 'apt-get install vim -y'
+
+ansible all -i uhosts.ini -s -m apt -a 'pkg=nginx state=installed update_cache=true'
+
+all - Run on all defined hosts from the inventory file
+-s - Run using sudo
+-m apt - Use the apt module
+
+
+tasks and handlers::::::::::
+
+---
+- hosts: all
+  tasks:
+    - name: Ensure Zsh is installed
+      apt: name=zsh state=installed
+
+    - name: Ensure git is installed
+      apt: name=git state=installed
+
+    - name: Create my user account
+      user: name=ryan shell=/usr/bin/zsh
+
+    - name: Add my public key to the server
+      authorized_key: user=ryan
+                      key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+    - name: Install oh-my-zsh
+      git: repo=https://github.com/robbyrussell/oh-my-zsh.git
+           dest=~/.oh-my-zsh
+      remote_user: ryan
+      sudo: false
+
+    - name: Copy .zshrc template
+      command: cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc
+      remote_user: ryan
+      sudo: false
+
+
+
+ansible-playbook myuser.yml -i uhosts.ini -u ubuntu -become
+
+
+
+using galaxy to download the existing roles
+
+ansible-galaxy install jdauphant.nginx -p roles
+
+
+---
+- hosts: all
+  roles:
+    - role: jdauphant.nginx
+      nginx_http_params:
+        - sendfile on
+        - access_log /var/log/nginx/access.log
+      nginx_sites:
+         wiredcraft:
+           - listen 80
+           - server_name _
+           - root /var/www/wiredcraft.com/_site
+           - location / { try_files $uri $uri/ /index.html; }
+
+
+The code above will:
+
+Install NGINX with sendfile on and logs in /var/log/nginx/access.log (more about this in the official NGINX documentation).
+Add a site named “wiredcraft” served by default by NGINX on port 80, from /var/www/wiredcraft.com/_site. All these options are again available on the official NGINX documentation.
+We have nothing to serve yet, we’ll get to that later. You can ignore the /var/www/wiredcraft.com/_site path for now. Be aware as well that NGINX will be restarted after its configuration has been changed.
+
+We’re now ready to apply this to our host. Just run the following:
+
+$ ansible-playbook deploy.yml -i hosts -u root -k -v
+
+
+
+ - name: install default packages
+    apt: pkg={{ item }} state=installed
+    with_items:
+      - aptitude
+      - vim
+      - supervisor
+      - python-dev
+      - htop
+      - screen
+
+
+
+using with items we can install multiple things
+
+
+
+---
+- hosts: all
+  sudo: true
+  tasks:
+    - name: update apt cache
+      apt: update_cache=yes
+    - name: install apache
+      apt: name=apache2 state=present
+    - name: install mysql
+      apt: name=mysql-server state=present
+    - name: install php
+      apt: name=php5 state=present
+
+
+
+FOR YUM 
+
+
+
+---
+- hosts: tag_Ansible_Slave
+user: ec2-user
+sudo: yes
+tasks:
+- name: Update all packages to latest
+yum: name=* state=latest
+
+- name: Install specific nginx package for centos 7
+yum: name='http://nginx.org/packages/centos/7/noarch/RPMS/nginx-\
+release-centos-7-0.el7.ngx.noarch.rpm' state=present
+

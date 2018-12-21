@@ -1,0 +1,26 @@
+---
+- name: Checking if php5 is already installed
+  shell: "php5 -v | grep {{ php5_version }}"
+  register: php5_version_check
+  ignore_errors: yes
+
+- name: Install php5
+  apt:
+    name: php5
+    state: present
+  when: 
+    - php5_version_check.rc == 1
+    - (ansible_distribution == "Ubuntu" and ansible_distribution_major_version == "14")
+
+- name: Checking if php5-fpm is already installed
+  shell: "php5-fpm -v | grep {{ php5_fpm_version }}"
+  register: php5_fpm_version_check
+  ignore_errors: yes
+
+- name: Install php5-fpm
+  apt:
+    name: php5-fpm
+    state: present
+  when: 
+    - php5_fpm_version_check.rc == 1
+    - (ansible_distribution == "Ubuntu" and ansible_distribution_major_version == "14")

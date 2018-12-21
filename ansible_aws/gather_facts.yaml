@@ -1,0 +1,7 @@
+---
+ - hosts: all
+   tasks:
+    - ec2_remote_facts:
+        filters: 
+          instance-state-name: running
+          "tag:All": Production
